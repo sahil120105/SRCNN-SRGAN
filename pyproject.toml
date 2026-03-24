@@ -1,0 +1,27 @@
+[project]
+name = "super-resolution-using-srgan"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10,<3.12"
+dependencies = [
+    "ensure>=1.0.4",
+    "h5py>=3.16.0",
+    "lpips>=0.1.4",
+    "numpy>=2.2.6",
+    "opencv-python>=4.13.0.92",
+    "pillow>=12.0.0",
+    "python-box>=7.4.1",
+    "pyyaml>=6.0.3",
+    "scikit-image>=0.25.2",
+    "streamlit>=1.55.0",
+    "streamlit-image-comparison>=0.0.4",
+    "tensorboard>=2.20.0",
+    "torch>=2.7.1",
+    "torchaudio>=2.7.1",
+    "torchvision>=0.22.1",
+    "tqdm>=4.66.5",
+]
+
+[[tool.uv.index]]
+url = "https://download.pytorch.org/whl/cu118"
