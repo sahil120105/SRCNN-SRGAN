@@ -28,9 +28,13 @@ def calculate_lpips(img1_tensor, img2_tensor):
     Lower is better (closer to human perception).
     Expects Tensors in range [-1, 1].
     """
-    with torch.no_state():
-        dist = loss_fn_alex(img1_tensor, img2_tensor)
-    return dist.item()
+    with torch.no_grad():
+        # LPIPS expects batch dimension, usually (1, C, H, W) or (B, C, H, W)
+        if len(img1_tensor.shape) == 3:
+            img1_tensor = img1_tensor.unsqueeze(0)
+            img2_tensor = img2_tensor.unsqueeze(0)
+        dist = loss_fn_alex(img1_tensor.cpu(), img2_tensor.cpu())
+    return dist.mean().item()
 
 def calculate_edge_fidelity(img1, img2):
     """

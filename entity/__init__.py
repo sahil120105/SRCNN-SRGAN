@@ -52,3 +52,21 @@ class ModelTrainingConfig:
     device: str      # Moved in YAML
     log_step: int    # New
     patience: int    # New
+
+
+@dataclass(frozen=True)
+class SRGANTrainingConfig:
+    root_dir: Path
+    train_data_path: Path
+    valid_data_path: Path
+    model_path_g: Path
+    model_path_d: Path
+    pretrain_epochs: int
+    epochs: int
+    batch_size: int
+    learning_rate_g: float
+    learning_rate_d: float
+    normalization: str
+    device: str
+    log_step: int
+    patience: int

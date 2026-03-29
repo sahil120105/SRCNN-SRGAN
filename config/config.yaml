@@ -65,17 +65,20 @@ model_training:
     model_path: artifacts/model_training/srcnn.pth
     params:
       epochs: 100
-      batch_size: 16
+      batch_size: 256
       lr: 0.0001
       normalization: "zero_to_one"
       
   srgan:
     train_data: data/processed/srgan/srgan_train.h5
     valid_data: data/processed/srgan/srgan_valid.h5
-    # PATH FIXED: Stored in artifacts, not the code directory
-    model_path: artifacts/model_training/srgan_gen.pth
+    # Separate paths for generator and discriminator
+    model_path_g: artifacts/model_training/srgan_gen.pth
+    model_path_d: artifacts/model_training/srgan_disc.pth
     params:
+      pretrain_epochs: 50
       epochs: 200
-      batch_size: 16
-      lr: 0.0001
+      batch_size: 8
+      lr_g: 0.0001
+      lr_d: 0.0001
       normalization: "minus_one_to_one"

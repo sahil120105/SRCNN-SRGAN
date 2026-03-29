@@ -13,6 +13,10 @@ class DataIngestion:
         self.config = config
 
     def download_file(self):
+        if self._data_exists():
+            logger.info("All required dataset directories exist and are populated. Skipping download phase.")
+            return
+            
         start_time = time.time()
         
         for name, url in self.config.download_urls.items():

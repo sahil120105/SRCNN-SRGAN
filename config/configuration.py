@@ -1,7 +1,7 @@
 from utils.common import read_yaml, create_directories
 from pathlib import Path
 from custom_logger import logger
-from entity import DataIngestionConfig, DataTransformationConfig, ModelTrainingConfig
+from entity import DataIngestionConfig, DataTransformationConfig, ModelTrainingConfig, SRGANTrainingConfig
 
 CONFIG_FILE_PATH = Path("config/config.yaml")   
 
@@ -77,6 +77,29 @@ class ConfigurationManager:
             learning_rate=model_params.params.lr,
             normalization=model_params.params.normalization,
             # --- Updated mappings below ---
+            device=training_config.device,
+            log_step=training_config.log_step,
+            patience=training_config.patience
+        )
+
+    def get_srgan_training_config(self) -> SRGANTrainingConfig:
+        training_config = self.config.model_training
+        model_params = training_config.srgan
+        
+        create_directories([training_config.root_dir])
+
+        return SRGANTrainingConfig(
+            root_dir=Path(training_config.root_dir),
+            train_data_path=Path(model_params.train_data),
+            valid_data_path=Path(model_params.valid_data),
+            model_path_g=Path(model_params.model_path_g),
+            model_path_d=Path(model_params.model_path_d),
+            pretrain_epochs=model_params.params.pretrain_epochs,
+            epochs=model_params.params.epochs,
+            batch_size=model_params.params.batch_size,
+            learning_rate_g=model_params.params.lr_g,
+            learning_rate_d=model_params.params.lr_d,
+            normalization=model_params.params.normalization,
             device=training_config.device,
             log_step=training_config.log_step,
             patience=training_config.patience
