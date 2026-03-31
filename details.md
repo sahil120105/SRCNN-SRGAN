@@ -64,6 +64,18 @@ Different models were trained on different scales:
 
 ---
 
+## 5. Intelligent Routing Logic
+
+| Domain | Categories | Model | Rationale |
+| :--- | :--- | :--- | :--- |
+| **Medical / Scientific** | Cells, X-rays, MRI, Scans | **SRCNN** | **Fidelity Priority**: Ensures absolute pixel accuracy. GANs are prohibited to prevent hallucinating false clinical data. |
+| **Nature / Wildlife** | Bird, Butterfly, Animals | **Real-ESRGAN** | **Perceptual Priority**: Maximizes sharpness for organic textures like fur and wings (Set5: Bird/Butterfly). |
+| **Faces / Portraits** | Baby, Woman, Head | **Real-ESRGAN** | **Perceptual Priority**: Reconstructs realistic human features and hair (Set5: Baby/Woman/Head). |
+| **Technical / Digital** | Text, Monitors, Documents | **SRCNN** | **Legibility Priority**: Prevents GAN-induced morphing of character strokes or UI lines. |
+| **Standard Imagery** | Generic Objects | **Real-ESRGAN** | **Perceptual Priority**: Default for high-fidelity visual appeal. |
+
+---
+
 ## 6. Results Summary
 
 | Model | Visual Quality | PSNR Focus | SSIM Focus | Latency |
