@@ -1,3 +1,7 @@
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from config.configuration import ConfigurationManager
 from components.data_ingestion import DataIngestion
 from custom_logger import logger

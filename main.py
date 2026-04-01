@@ -4,6 +4,7 @@ Upload a high-resolution image → 4x downscale → compare Bicubic / SRCNN / SR
 """
 
 import sys, os, time
+import io
 sys.path.insert(0, os.path.dirname(__file__))
 
 import streamlit as st
@@ -329,6 +330,12 @@ def classify_image(img, model, device, categories):
     
     if any(any(k in cat for k in tech_keys) for cat in top_cats):
         return "Medical / Scientific Pattern", "SRCNN", "Fidelity Priority: Detected technical/scientific patterns in the Top-5 predictions. Routing to SRCNN to ensure no GAN artifacts."
+
+    # Text/Document keywords
+    doc_text_keys = ["text", "document", "book", "menu", "envelope", "paper", "web site", "comic", "crossword", "receipt", "letter", "print", "typewriter", "keyboard", "binder", "poster", "scoreboard", "laptop", "monitor", "screen"]
+    
+    if any(any(k in cat for k in doc_text_keys) for cat in top_cats):
+        return "Text / Document", "SRCNN", "Fidelity Priority: Text and documents require structural integrity. Routing to SRCNN to prevent hallucinated characters."
     
     # Nature/Wildlife (Top-1 focused but with bird/butterfly check)
     nature_keys = ["bird", "dog", "cat", "bear", "lion", "tiger", "fish", "tree", "plant", "flower", "daisy", "valley", "mountain", "forest", "butterfly", "insect", "fauna"]
@@ -413,9 +420,9 @@ if uploaded is None:
 
 
 # ── UI Layout (Tabs) ─────────────────────────────────────────────────────────
-tab_compare, tab_router = st.tabs(["📊 Benchmark Comparison", "🤖 Intelligent Router"])
+tab_compare, tab_router, tab_upscale = st.tabs(["📊 Benchmark Comparison", "🤖 Intelligent Router", "✨ Direct Upscale"])
 
-# ── Preprocess (Shared) ───────────────────────────────────────────────────────
+# ── Preprocess (Shared for Benchmark & Router) ───────────────────────────────
 hr_orig = Image.open(uploaded).convert("RGB")
 W, H    = hr_orig.size
 W_crop  = (W // SCALE) * SCALE
@@ -424,6 +431,11 @@ hr      = hr_orig.crop((0, 0, W_crop, H_crop))
 lr      = hr.resize((W_crop // SCALE, H_crop // SCALE), Image.BICUBIC)
 size    = (W_crop, H_crop)
 hr_np   = pil_to_np(hr)
+
+# ── Preprocess (Direct Upscale) ──────────────────────────────────────────────
+lr_direct = hr_orig
+W_lr, H_lr = lr_direct.size
+target_size_direct = (W_lr * SCALE, H_lr * SCALE)
 
 
 with tab_compare:
@@ -465,6 +477,12 @@ with tab_compare:
         image_comparison(img1=bic_img, img2=srgan_img, label1="Bicubic", label2="Real-ESRGAN", make_responsive=True, in_memory=True)
     except:
         st.image(srgan_img, use_container_width=True)
+    
+    st.markdown("<hr>", unsafe_allow_html=True)
+    d1, d2, d3, _ = st.columns([1, 1, 1, 1])
+    with d1: st.download_button("⬇ Bicubic", to_bytes(bic_img), "bicubic_sr.png", "image/png")
+    with d2: st.download_button("⬇ SRCNN", to_bytes(srcnn_img), "srcnn_sr.png", "image/png")
+    with d3: st.download_button("⬇ Real-ESRGAN", to_bytes(srgan_img), "srgan_sr.png", "image/png")
 
 
 with tab_router:
@@ -513,15 +531,39 @@ with tab_router:
                 pass
 
 
-# ── Downloads ─────────────────────────────────────────────────────────────────
-st.markdown("<hr>", unsafe_allow_html=True)
-d1, d2, d3, _ = st.columns([1, 1, 1, 1])
-try:
-    with d1:
-        st.download_button("⬇ Bicubic",  to_bytes(bic_img),   "bicubic_sr.png",  "image/png")
-    with d2:
-        st.download_button("⬇ SRCNN",    to_bytes(srcnn_img), "srcnn_sr.png",    "image/png")
-    with d3:
-        st.download_button("⬇ Real-ESRGAN", to_bytes(srgan_img), "srgan_sr.png", "image/png")
-except:
-    pass
+with tab_upscale:
+    st.markdown("### ✨ Direct Upscale")
+    st.markdown("Upload a strictly low-resolution image and upsample it 4x. *Note: No ground truth capabilities available.*")
+    
+    model_choice = st.selectbox("Select Upscaling Model", ["Real-ESRGAN", "SRCNN", "Bicubic"])
+    
+    if st.button("🚀 Generate High-Resolution Image"):
+        with st.spinner(f"Upscaling 4x using {model_choice}…"):
+            if model_choice == "Real-ESRGAN":
+                up_img, ms = run_srgan(lr_direct, target_size_direct, srgan_model, srgan_device)
+            elif model_choice == "SRCNN":
+                up_img, ms = run_srcnn(lr_direct, target_size_direct, srcnn_model, srcnn_device)
+            else:
+                up_img, ms = run_bicubic(lr_direct, target_size_direct)
+            
+            st.success(f"Upscaling complete in {ms:.1f} ms!")
+            
+            # Show Comparison Slider (Bicubic vs Selected if not Bicubic)
+            if model_choice != "Bicubic":
+                st.markdown("<div class='slider-label'>Bicubic Interpolation vs AI Upscale</div>", unsafe_allow_html=True)
+                try:
+                    from streamlit_image_comparison import image_comparison
+                    bic_base, _ = run_bicubic(lr_direct, target_size_direct)
+                    image_comparison(img1=bic_base, img2=up_img, label1="Bicubic", label2=model_choice, make_responsive=True, in_memory=True)
+                except:
+                    st.image(up_img, use_container_width=True, caption=f"Upscaled using {model_choice}")
+            else:
+                st.image(up_img, use_container_width=True, caption="Upscaled using Bicubic")
+            
+            # Download button
+            st.download_button(
+                label=f"⬇ Download 4x Upscaled Image ({target_size_direct[0]}x{target_size_direct[1]})",
+                data=to_bytes(up_img),
+                file_name=f"upscaled_4x_{model_choice.lower()}.png",
+                mime="image/png"
+            )
